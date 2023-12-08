@@ -20,7 +20,6 @@ and expr =
   | UnaryOp of unary_op * expr
   | PostfixOp of expr * unary_op
   | TernaryOp of expr * expr * expr
-  | FieldRef of expr
   | FunctionCall of identifier * expr list
 
 and built_in_function =
@@ -64,6 +63,7 @@ and statement =
   | IfStatement of expr * statement * statement option
   | WhileStatement of expr * statement
   | ForStatement of statement option * expr option * statement option * statement
+  | ForInStatement of identifier in identifier
   | TerminatableStatement of terminatable_statement
 
 and terminatable_statement =
@@ -96,6 +96,11 @@ and non_unary_input_function =
 
 and unary_input_function =
   | PipeInputFunction of unary_expr * simple_get
+
+and lvalue =
+  | SimpleName of identifier
+  | IndexedName of expr list
+  | FieldRef of expr
 
 and simple_get =
   | Getline
