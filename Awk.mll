@@ -14,8 +14,8 @@ let ident = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 
 rule token = parse
   | ws+                  { token lexbuf }
-  | newline              { token lexbuf }
-  | newline_or_semicolon { token lexbuf }
+  | newline              { NEWLINE }
+  | newline_or_semicolon { NEWLINE }
   | "BEGIN"              { BEGIN }
   | "END"                { END }
   | "getline"            { GETLINE }
@@ -52,8 +52,8 @@ and rand = "rand"        { BUILTIN_FUNC_NAME }
 and srand = "srand"      { BUILTIN_FUNC_NAME }
 and gsub = "gsub"        { BUILTIN_FUNC_NAME }
 and index = "index"      { BUILTIN_FUNC_NAME }
-and length = "lengh"    { BUILTIN_FUNC_NAME }
-and match_ = "match"      { BUILTIN_FUNC_NAME }
+and length = "lengh"     { BUILTIN_FUNC_NAME }
+and match_ = "match"     { BUILTIN_FUNC_NAME }
 and split = "split"      { BUILTIN_FUNC_NAME }
 and sprintf = "sprintf"  { BUILTIN_FUNC_NAME }
 and sub = "sub"          { BUILTIN_FUNC_NAME }
