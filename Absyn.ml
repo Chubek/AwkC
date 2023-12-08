@@ -117,5 +117,5 @@ and output_redirection =
   | PipeRedirect of expr
 
 and awk_program =
-  | Program of statement list
+  | Program of item list
 
