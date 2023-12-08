@@ -1,0 +1,8 @@
+*.out
+*.a
+*.o
+*.tmp
+*.temp
+build/
+debug/
+_*
