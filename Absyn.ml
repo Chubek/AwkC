@@ -10,40 +10,22 @@ type binary_op =
   | BitwiseXor| BitwiseAnd
 
 and unary_op =
-  | Incr | Decr | Neg | Pos | BitwiseNot | Not
+  | Incr | Decr | Neg | Pos | BitwiseNot | Not | In
 
 and expr =
   | Variable of string
-  | Constant of string
+  | Constant of expr
+  | Number of int
+  | String of string
   | Regex of string
+  | Lvalue of lvalue
   | BinaryOp of expr * binary_op * expr
   | UnaryOp of unary_op * expr
   | PostfixOp of expr * unary_op
   | TernaryOp of expr * expr * expr
+  | InList of expr list * identifier
   | FunctionCall of identifier * expr list
-
-and built_in_function =
-  | Atan2 of expr * expr
-  | Cos of expr
-  | Sin of expr
-  | Exp of expr
-  | Log of expr
-  | Sqrt of expr
-  | Int of expr
-  | Rand
-  | Srand of expr
-  | Gsub of expr * expr * expr
-  | Index of expr * expr
-  | Length of expr
-  | Match of expr * expr
-  | Split of expr * expr * expr_array
-  | Sprintf of expr * expr_array
-  | Sub of expr * expr * expr
-  | Substr of expr * expr * expr option
-  | Tolower of expr
-  | Toupper of expr
-  | Close of expr
-  | System of expr
+  | BuiltinFunctionCall of identifier * expr list
 
 and item =
   | SoloAction of action
@@ -92,19 +74,17 @@ and print_expr =
 
 and non_unary_print_expr =
   | ParenthesizedPrintExpr of print_expr list
-  | NonUnaryInputFunction of non_unary_input_function
+  | GetLine of getline
 
-and non_unary_input_function =
+and getline =
   | SimpleGet
-  | SimpleGetWithExpr of expr
-  | PipeInputFunction of non_unary_expr * simple_get
-
-and unary_input_function =
-  | PipeInputFunction of unary_expr * simple_get
+  | SimpleGetWithLval of lval
+  | SimpleGetWithExpr of getline * expr
+  | SimpleGetWithPipe of expr * simple_get
 
 and lvalue =
   | SimpleName of identifier
-  | IndexedName of expr list
+  | ArrayAccess of identifier * expr list
   | FieldRef of expr
 
 and simple_get =
