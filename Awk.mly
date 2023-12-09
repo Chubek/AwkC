@@ -15,6 +15,9 @@
 %token '{' '}' '(' ')' '[' ']' ',' ';' NEWLINE
 %token '+' '-' '*' '%' '^' '!' '>' '<' '|' '?' ':' '˜' '$' '='
 
+%type <expr>   expr, unary_expr, non_unary_expr
+%type <lvalue> lvalue
+
 %start <AST.program> program
 %%
 
@@ -152,101 +155,100 @@ expr_opt         : /* empty */              { None }
 expr             : unary_expr               { $1 }
                  | non_unary_expr           { $1 }
 
-unary_expr       : '+' expr                 { UnaryPlus($2) }
-                 | '-' expr                 { UnaryMinus($2) }
-                 | unary_expr '^' expr       { BinaryOp("^", $1, $3) }
-                 | unary_expr '*' expr       { BinaryOp("*", $1, $3) }
-                 | unary_expr '/' expr       { BinaryOp("/", $1, $3) }
-                 | unary_expr '%' expr       { BinaryOp("%", $1, $3) }
-                 | unary_expr '+' expr       { BinaryOp("+", $1, $3) }
-                 | unary_expr '-' expr       { BinaryOp("-", $1, $3) }
-                 | unary_expr non_unary_expr { BinaryOp("", $1, $2) }
-                 | unary_expr '<' expr       { BinaryOp("<", $1, $3) }
-                 | unary_expr "<=" expr      { BinaryOp("<=", $1, $3) }
-                 | unary_expr "!=" expr      { BinaryOp("!=", $1, $3) }
-                 | unary_expr "==" expr      { BinaryOp("==", $1, $3) }
-                 | unary_expr '>' expr       { BinaryOp(">", $1, $3) }
-                 | unary_expr ">=" expr      { BinaryOp(">=", $1, $3) }
-                 | unary_expr '˜' expr       { BinaryOp("˜", $1, $3) }
-                 | unary_expr "!~" expr      { BinaryOp("!~", $1, $3) }
-                 | unary_expr IN NAME        { In($1, $3) }
+unary_expr       : '+' expr                 { UnaryOp(Pos, $2) }
+                 | '-' expr                 { UnaryOp(Neg, $2) }
+                 | unary_expr '^' expr       { BinaryOp(Exp, $1, $3) }
+                 | unary_expr '*' expr       { BinaryOp(Mul, $1, $3) }
+                 | unary_expr '/' expr       { BinaryOp(Div, $1, $3) }
+                 | unary_expr '%' expr       { BinaryOp(Rem, $1, $3) }
+                 | unary_expr '+' expr       { BinaryOp(Add, $1, $3) }
+                 | unary_expr '-' expr       { BinaryOp(Sub, $1, $3) }
+                 | unary_expr non_unary_expr { BinaryOp(NoOp, $1, $3) }
+                 | unary_expr '<' expr       { BinaryOp(Lt, $1, $3) }
+                 | unary_expr "<=" expr      { BinaryOp(Le, $1, $3) }
+                 | unary_expr "!=" expr      { BinaryOp(Ne, $1, $3) }
+                 | unary_expr "==" expr      { BinaryOp(Eq, $1, $3) }
+                 | unary_expr '>' expr       { BinaryOp(Gt, $1, $3) }
+                 | unary_expr ">=" expr      { BinaryOp(Ge, $1, $3) }
+                 | unary_expr '˜' expr       { BinaryOp(Ere, $1, $3) }
+                 | unary_expr "!~" expr      { BinaryOp(Nre, $1, $3) }
+                 | unary_expr IN NAME        { UnaryOp(In, $1) }
                  | unary_expr "&&" newline_opt expr
-                                           { BinaryOp("&&", $1, $3) }
+                                           { BinaryOp(And, $1, $3) }
                  | unary_expr "||" newline_opt expr
-                                           { BinaryOp("||", $1, $3) }
+                                           { BinaryOp(Or, $1, $3) }
                  | unary_expr '?' expr ':' expr
                                            { TernaryOp($1, $3, $5) }
                  | unary_input_function     { $1 }
 
 non_unary_expr   : '(' expr ')'              { $2 }
-                 | '!' expr                 { Not($2) }
-                 | non_unary_expr '^' expr   { BinaryOp("^", $1, $3) }
-                 | non_unary_expr '*' expr   { BinaryOp("*", $1, $3) }
-                 | non_unary_expr '/' expr   { BinaryOp("/", $1, $3) }
-                 | non_unary_expr '%' expr   { BinaryOp("%", $1, $3) }
-                 | non_unary_expr '+' expr   { BinaryOp("+", $1, $3) }
-                 | non_unary_expr '-' expr   { BinaryOp("-", $1, $3) }
+                 | '!' expr                  { UnaryOp(Not, $2) }
+                 | non_unary_expr '^' expr   { BinaryOp(Exp, $1, $3) }
+                 | non_unary_expr '*' expr   { BinaryOp(Mul, $1, $3) }
+                 | non_unary_expr '/' expr   { BinaryOp(Div, $1, $3) }
+                 | non_unary_expr '%' expr   { BinaryOp(Rem, $1, $3) }
+                 | non_unary_expr '+' expr   { BinaryOp(Add, $1, $3) }
+                 | non_unary_expr '-' expr   { BinaryOp(Sub, $1, $3) }
                  | non_unary_expr non_unary_expr
-                                           { BinaryOp("", $1, $2) }
-                 | non_unary_expr '<' expr   { BinaryOp("<", $1, $3) }
-                 | non_unary_expr "<=" expr  { BinaryOp("<=", $1, $3) }
-                 | non_unary_expr "!=" expr  { BinaryOp("!=", $1, $3) }
-                 | non_unary_expr "==" expr  { BinaryOp("==", $1, $3) }
-                 | non_unary_expr '>' expr   { BinaryOp(">", $1, $3) }
-                 | non_unary_expr ">=" expr  { BinaryOp(">=", $1, $3) }
-                 | non_unary_expr '˜' expr   { BinaryOp("˜", $1, $3) }
-                 | non_unary_expr "!~" expr  { BinaryOp("!~", $1, $3) }
+                                           { BinaryOp(NoOp, $1, $2) }
+                 | non_unary_expr '<' expr   { BinaryOp(Lt, $1, $3) }
+                 | non_unary_expr "<=" expr  { BinaryOp(Le, $1, $3) }
+                 | non_unary_expr "!=" expr  { BinaryOp(Ne, $1, $3) }
+                 | non_unary_expr "==" expr  { BinaryOp(Eq, $1, $3) }
+                 | non_unary_expr '>' expr   { BinaryOp(Gt, $1, $3) }
+                 | non_unary_expr ">=" expr  { BinaryOp(Ge, $1, $3) }
+                 | non_unary_expr '˜' expr   { BinaryOp(Ere, $1, $3) }
+                 | non_unary_expr "!~" expr  { BinaryOp(Nre, $1, $3) }
                  | non_unary_expr IN NAME    { In($1, $3) }
                  | '(' multiple_expr_list ')' IN NAME
                                            { InList($2, $5) }
                  | non_unary_expr "&&" newline_opt expr
-                                           { BinaryOp("&&", $1, $3) }
+                                           { BinaryOp(And, $1, $3) }
                  | non_unary_expr "||" newline_opt expr
-                                           { BinaryOp("||", $1, $3) }
+                                           { BinaryOp(Or, $1, $3) }
                  | non_unary_expr '?' expr ':' expr
                                            { TernaryOp($1, $3, $5) }
                  | NUMBER                   { Number($1) }
                  | STRING                   { String($1) }
-                 | lvalue                   { LValue($1) }
-                 | ERE                      { ERE($1) }
-                 | lvalue "++"              { PreIncrement($1) }
-                 | lvalue "--"              { PreDecrement($1) }
-                 | "++" lvalue              { PostIncrement($2) }
-                 | "--" lvalue              { PostDecrement($2) }
-                 | lvalue "^=" expr         { CompoundAssign("^=", $1, $3) }
-                 | lvalue "%=" expr         { CompoundAssign("%=", $1, $3) }
-                 | lvalue "*=" expr         { CompoundAssign("*=", $1, $3) }
-                 | lvalue "/=" expr         { CompoundAssign("/=", $1, $3) }
-                 | lvalue "+=" expr         { CompoundAssign("+=", $1, $3) }
-                 | lvalue "-=" expr         { CompoundAssign("-=", $1, $3) }
-                 | lvalue '=' expr          { Assign($1, $3) }
+                 | lvalue                   { Lvalue($1) }
+                 | ERE                      { Regex($1) }
+                 | lvalue "++"              { PostfixOp($1, Incr) }
+                 | lvalue "--"              { PostfixOp($1, Decr) }
+                 | "++" lvalue              { UnaryOp(Incr, $2) }
+                 | "--" lvalue              { UnaryOp(Decr, $2) }
+                 | lvalue "^=" expr         { BinaryOp(ExpAssign, $1, $3) }
+                 | lvalue "%=" expr         { BinaryOp(RemAssign, $1, $3) }
+                 | lvalue "*=" expr         { BinaryOp(MulAssign, $1, $3) }
+                 | lvalue "/=" expr         { BinaryOp(DivAssign, $1, $3) }
+                 | lvalue "+=" expr         { BinaryOp(AddAssign, $1, $3) }
+                 | lvalue "-=" expr         { BinaryOp(SubAssign, $1, $3) }
+                 | lvalue '=' expr          { Assignment($1, $3) }
                  | FUNC_NAME '(' expr_list_opt ')'
                                            { FunctionCall($1, $3) }
                  | BUILTIN_FUNC_NAME '(' expr_list_opt ')'
                                            { BuiltinFunctionCall($1, $3) }
-                 | BUILTIN_FUNC_NAME { BuiltinFunctionCallExpr($1, []) }
                  | non_unary_input_function { $1 }
                  ;
 
 lvalue           :
-                 | NAME { VarLValue $1 }
-                 | NAME '[' expr_list ']' { ArrayAccessLValue($1, $3) }
-                 | '$' expr { DollarLValue $2 }
+                 | NAME { SimpleName $1 }
+                 | NAME '[' expr_list ']' { ArrayAccess($1, $3) }
+                 | '$' expr { FieldRef $2 }
                  ;
 
 non_unary_input_function:
                  | simple_get { $1 }
-                 | simple_get '<' expr { PipelineExpr($1, $3) }
-                 | non_unary_expr '|' simple_get { PipelineExpr($1, $3) }
+                 | simple_get '<' expr { SimpleGetWithExpr($1, $3) }
+                 | non_unary_expr '|' simple_get { SimpleGetWithPipe($1, $3) }
                  ;
 
 unary_input_function:
-                 | unary_expr '|' simple_get { PipelineExpr($1, $3) }
+                 | unary_expr '|' simple_get { SimpleGetWithPipe($1, $3) }
                  ;
 
 simple_get       :
-                 | GETLINE { GetlineExpr None }
-                 | GETLINE lvalue { GetlineExpr(Some $2) }
+                 | GETLINE { SimpleGet }
+                 | GETLINE lvalue { SimpleGetWithLval($2) }
                  ;
 
 newline_opt      :
