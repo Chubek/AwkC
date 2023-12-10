@@ -34,10 +34,10 @@ and item =
   | IdentFunction of identifier * param list option * action
 
 and special_pattern =
-  | Begin | End | BeginFile | EndFile
+  | Begin | End
 
 and pattern =
-  | NormalPattern of expr
+  | NormalPattern of (expr * expr option)
   | SpecialPattern of special_pattern
 
 and action =
@@ -48,7 +48,7 @@ and statement =
   | IfStatement of expr * statement * statement option
   | WhileStatement of expr * statement
   | ForStatement of statement option * expr option * statement option * statement
-  | ForInStatement of identifier in identifier
+  | ForInStatement of identifier in identifier * statement
   | TerminatableStatement of terminatable_statement
 
 and terminatable_statement =

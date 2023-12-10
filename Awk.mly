@@ -17,6 +17,10 @@
 
 %type <expr>   expr, unary_expr, non_unary_expr
 %type <lvalue> lvalue
+%type <special_pattern> special_pattern
+%type <(expr * expr option)> normal_pattern
+%type <statement> terminated_statement, unterminated_statement
+%type <simple_statement> simple_statement
 
 %start <AST.program> program
 %%
@@ -44,11 +48,11 @@ param_list       : NAME                     { [$1] }
 pattern          : normal_pattern           { NormalPattern($1) }
                  | special_pattern          { SpecialPattern($1) }
 
-normal_pattern   : expr                     { ExprPattern($1) }
-                 | expr ',' newline_opt expr { ExprListPattern([$1; $3]) }
+normal_pattern   : expr                     { ($1. None) }
+                 | expr ',' newline_opt expr { ($1, Some ($4)) }
 
-special_pattern  : BEGIN                    { BeginPattern }
-                 | END                      { EndPattern }
+special_pattern  : BEGIN                    { Begin }
+                 | END                      { End }
 
 action           : '{' newline_opt '}'     { [] }
                  | '{' newline_opt terminated_statement_list '}'
@@ -72,17 +76,17 @@ unterminated_statement_list : unterminated_statement
 
 terminated_statement : action newline_opt    { $1 }
                  | IF '(' expr ')' newline_opt terminated_statement
-                                           { If($3, $5) }
+                                           { IfStatement($3, $5, None) }
                  | IF '(' expr ')' newline_opt terminated_statement
                        ELSE newline_opt terminated_statement
-                                           { IfElse($3, $5, $8) }
+                                           { IfStatement($3, $5, Some($8)) }
                  | WHILE '(' expr ')' newline_opt terminated_statement
-                                           { While($3, $5) }
+                                           { WhileStatement($3, $5) }
                  | FOR '(' simple_statement_opt ';' expr_opt ';'
                       simple_statement_opt ')' newline_opt terminated_statement
-                                           { For($3, $5, $7, $10) }
+                                           { ForStatement(Some $3, Some $5, Some $7, $10) }
                  | FOR '(' NAME IN NAME ')' newline_opt terminated_statement
-                                           { ForIn($4, $6, $9) }
+                                           { ForInStatement($4, $6, $8) }
                  | ';' newline_opt          { [] }
                  | terminatable_statement NEWLINE newline_opt
                                            { [$1] }
@@ -92,17 +96,17 @@ terminated_statement : action newline_opt    { $1 }
 unterminated_statement : terminatable_statement
                                            { [$1] }
                  | IF '(' expr ')' newline_opt unterminated_statement
-                                           { If($3, $5) }
+                                           { IfStatement($3, $5, None) }
                  | IF '(' expr ')' newlineopt terminated_statement
                        ELSE newline_opt unterminated_statement
-                                           { IfElse($3, $5, $8) }
+                                           { IfStatement($3, $5, Some ($8)) }
                  | WHILE '(' expr ')' newline_opt unterminated_statement
-                                           { While($3, $5) }
+                                           { WhileStatement($3, $5) }
                  | FOR '(' simple_statement_opt ';' expr_opt ';'
                       simple_statement_opt ')' newline_opt unterminated_statement
-                                           { For($3, $5, $7, $10) }
+                                           { ForStatement(Some $3, Some $5, Some $7, $10) }
                  | FOR '(' NAME IN NAME ')' newline_opt unterminated_statement
-                                           { ForIn($4, $6, $9) }
+                                           { ForInStatement($4, $6, $9) }
 
 terminatable_statement : simple_statement
                                            { $1 }
