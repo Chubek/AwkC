@@ -32,65 +32,80 @@ let rec walk_expr expr fh =
     Printf.fprintf fh ")";
     Printf.fprintf fh " : ";
     Printf.fprintf fh "(";
-    walk_expr e fh;
-    Printf.fprintf fh ")";
-  | InList (el1, id) ->
-    with ls_name = request_context in
-    Printf.fprintf fh "void* %s[] = {" ls_name;
-    List.map (fun e -> Printf.fprintf fh "(void*)";
-                       walk_expr fh e; 
-                       Printf.fprintf fh ",") el1;
-    Printf.fprintf fh "NULL";
-    Printf.fprintf fh "};"
-    Printf.fprintf fh "for (void* item = &%s; item != NULL; item++) { callback_%s(); }" ls_name ls_name
+    walk_expr e fh
+  | FunctionCall (id, arguments) ->
+    Printf.fprintf "%s(" id;
+    List.iter (fun exp -> walk_expr exp fh) arguments;
+    Printf.fprintf ")"
 
-and walk_lvalue lval =
+and walk_lvalue lval fh =
   match lval with
-  | SimpleName id -> walk_identifier id
-  | ArrayAccess (id, indices) ->
-    walk_identifier id;
-    List.iter walk_expr indices
-  | FieldRef e -> walk_expr e
+  | SimpleName id -> Printf.fpintf fh "%s" id
+  | ArrayAccess (id, indices) -> 
+    Printf.fprintf  fh "%s[" id;
+    List.iter (fun exp -> walk_expr exp fh) indices;
+    Printf.fprintf fh "]"
+  | FieldRef e ->
+    Printf.fprintf "get_field("
+    walk_expr e
+    Printf.fprintf ")"
 
-and walk_simple_statement stmt =
+and walk_simple_statement stmt fh =
   match stmt with
   | PrintAssign (lval, print_expr) ->
-    walk_lvalue lval;
-    walk_print_expr print_expr
+    Printf.fprintf fh "unsigned char* ";
+    walk_lvalue lval fh;
+    Printf.fprintf fh " = ";
+    walk_print_expr print_expr fh
   | Assignment (lval, e) ->
-    walk_lvalue lval;
-    walk_expr e
-  (* Handle other cases similarly *)
+    Printf.fprintf fh "void* ";
+    walk_lvalue lval fh;
+    Printf.fprintf fh " = ";
+    walk_expr e fh
 
 and walk_print_expr print_expr =
   match print_expr with
   | UnaryPrintExpr (s, pe) ->
-    Printf.printf "Unary Print Expression: %s\n" s;
-    walk_print_expr pe
+    Printf.fprintf fh "printf(\"%s\", " s;
+    walk_print_expr fh pe;
+    Printf.fprintf fh ")"
   | NonUnaryPrintExpr non_unary_pe ->
-    walk_non_unary_print_expr non_unary_pe
+    walk_non_unary_print_expr non_unary_pe fh
 
-and walk_non_unary_print_expr non_unary_pe =
+and walk_non_unary_print_expr non_unary_pe fh =
   match non_unary_pe with
   | ParenthesizedPrintExpr expr_list ->
-    List.iter walk_expr expr_list
+    List.iter walk_expr expr_list fh
   | GetLine getline ->
-    walk_getline getline
+    walk_getline getline fh
 
-and walk_getline getline =
+and walk_getline getline fh =
   match getline with
-  | SimpleGet -> Printf.printf "Simple Getline\n"
+  | SimpleGet -> Printf.fprint fh "getline()"
   | SimpleGetWithLval lval ->
-    Printf.printf "Simple Getline with Lvalue\n";
-    walk_lvalue lval
-  (* Handle other cases similarly *)
+    walk_lvalue lval fh;
+    Printf.fprintf " = getline_retr()";
+  | SimpleGetWithPipe (e, sg) ->
+    Printf.fprintf fh "pipe_command_into(";
+    walk_expr e fh;
+    Printf.fprintf fh ", &(";
+    walk_getline sg fh;
+    Printf.fprintf fh ")"
 
-and walk_output_redirection output_redirection =
+and walk_output_redirection output_redirection fh =
   match output_redirection with
   | OutputRedirect (s, e) ->
-    Printf.printf "Output Redirect: %s\n" s;
-    walk_expr e
-  (* Handle other cases similarly *)
+    Printf.fprintf fh "redirect_output(\"%s\", (" s;
+    walk_expr e fh;
+    Printf.fprintf fh "))"
+  | AppendRedirect (s, e) ->
+    Printf.fprintf fh "append_output(\"%s\", (" s;
+    walk_expr s e;
+    Printf.fprintf fh "))"
+  | PipeRedirect (s, e) ->
+    Printf.fprintf fh "pipe_redirect(\"%s\", (" s;
+    walk_expr s e;
+    Printf.fprintf fh "))"
 
 and walk_statement stmt =
   match stmt with
