@@ -23,9 +23,7 @@ and expr =
   | UnaryOp of unary_op * expr
   | PostfixOp of expr * unary_op
   | TernaryOp of expr * expr * expr
-  | InList of expr list * identifier
   | FunctionCall of identifier * expr list
-  | BuiltinFunctionCall of identifier * expr list
 
 and item =
   | SoloAction of action
@@ -48,7 +46,7 @@ and statement =
   | IfStatement of expr * statement * statement option
   | WhileStatement of expr * statement
   | ForStatement of statement option * expr option * statement option * statement
-  | ForInStatement of identifier in identifier * statement
+  | ForInStatement of identifier * identifier * statement
   | TerminatableStatement of terminatable_statement
 
 and terminatable_statement =

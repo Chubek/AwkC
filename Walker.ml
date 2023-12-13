@@ -107,18 +107,31 @@ and walk_output_redirection output_redirection fh =
     walk_expr s e;
     Printf.fprintf fh "))"
 
-and walk_statement stmt =
+and walk_statement stmt fh =
   match stmt with
   | IfStatement (cond, true_branch, false_branch_opt) ->
-    walk_expr cond;
-    walk_statement true_branch;
+    Printf.fprintf fh "if (";
+    walk_expr cond fh;
+    Printf.fprintf fh ") {";
+    walk_statement true_branch fh;
+    Printf.fprintf fh "}";
     (match false_branch_opt with
-    | Some false_branch -> walk_statement false_branch
+    | Some false_branch -> 
+      Printf.fprintf fh "else {";
+      walk_statement false_branch fh;
+      Printf.fprintf fh "}"
     | None -> ())
   | WhileStatement (cond, body) ->
-    walk_expr cond;
-    walk_statement body
-  (* Handle other cases similarly *)
+    Printf.fprintf fh "while (";
+    walk_expr cond fh;
+    Printf.fprintf fh ") {";
+    walk_statement body fh;
+    Printf.fprintf fh "}"
+  | ForInStatement (i1, i2, s) ->
+    Printf.fprintf fh "for (void* %s = %s; %s != NULL; %s++) {" i1 i2 i1 i1;
+    walk_statement s fh;
+    Printf.fprintf fh "}"
+  | TerminatableStatement ts -> walk_terminatable_statement ts fh
 
 and walk_terminatable_statement term_stmt =
   match term_stmt with

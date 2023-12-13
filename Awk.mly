@@ -25,13 +25,13 @@
 %start <AST.program> program
 %%
 
-program          : item_list                { $1 }
+program          : item_list               { $1 }
                  | item_list item          { $1 @ [$2] }
 
-item_list        : /* empty */              { [] }
+item_list        : /* empty */             { [] }
                  | item_list item          { $1 @ [$2] }
 
-item             : action                   { Action($1) }
+item             : action                  { Action($1) }
                  | pattern action          { PatternAction($1, $2) }
                  | normal_pattern          { NormalPattern($1) }
                  | FUNCTION NAME '(' param_list_opt ')' newline_opt action
@@ -39,16 +39,16 @@ item             : action                   { Action($1) }
                  | FUNCTION FUNC_NAME '(' param_list_opt ')' newline_opt action
                                            { Function($2, $4, $6) }
 
-param_list_opt   : /* empty */              { [] }
+param_list_opt   : /* empty */             { [] }
                  | param_list              { $1 }
 
-param_list       : NAME                     { [$1] }
+param_list       : NAME                    { [$1] }
                  | param_list ',' NAME     { $1 @ [$3] }
 
 pattern          : normal_pattern           { NormalPattern($1) }
                  | special_pattern          { SpecialPattern($1) }
 
-normal_pattern   : expr                     { ($1. None) }
+normal_pattern   : expr                      { ($1. None) }
                  | expr ',' newline_opt expr { ($1, Some ($4)) }
 
 special_pattern  : BEGIN                    { Begin }
