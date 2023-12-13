@@ -133,52 +133,60 @@ and walk_statement stmt fh =
     Printf.fprintf fh "}"
   | TerminatableStatement ts -> walk_terminatable_statement ts fh
 
-and walk_terminatable_statement term_stmt =
+and walk_terminatable_statement term_stmt fh =
   match term_stmt with
-  | SimpleStatement simple_stmt -> walk_simple_statement simple_stmt
-  | Break -> Printf.printf "Break\n"
-  (* Handle other cases similarly *)
+  | SimpleStatement simple_stmt -> 
+    walk_simple_statement simple_stmt fh
+  | Break -> Printf.fprintf fh "break"
+  | Continue -> Printf.fprintf fh "continue"
+  | Next -> Printf.fprintf fh "next()"
+  | Exit opt_expr ->
+       Printf.fprintf fh "exit(";
+        match opt_expr with
+       | Some e -> walk_expr e fh
+       | None -> Printf.fprintf fh "0";
+       Printf.fprintf fh ")"
+  | Return of opt_expr ->
+       Printf.fprintf fh "return(";
+        match opt_expr with
+       | Some e -> walk_expr e fh
+       | None -> Printf.fprintf fh "0";
+       Printf.fprintf fh ")"
+  | DoWhileStatement (s, e) ->
+        Printf.fprintf fh "do { ";
+        walk_statement s fh;
+        Printf.fprintf fh "while (";
+        walk_expr e fh;
+        Printf.fprintf fh ")"
 
-and walk_pattern pattern =
+
+and walk_pattern pattern fh =
   match pattern with
-  | NormalPattern (e, None) ->
-    walk_expr e
-  | NormalPattern (e, Some e_opt) ->
-    walk_expr e;
-    walk_expr e_opt
-  | SpecialPattern sp ->
-    Printf.printf "Special Pattern: %s\n" (match sp with (* ... *))
+  | NormalPattern (e, e_opt) ->
+        Printf.fprintf fh "if ("
+        walk_expr e fh;
+        match e_opt with
+       | Some e -> 
+          Printf.fprintf "&&";
+          walk_expr e fh;
+          Printf.fprintf  fh ")";
+       | None -> Printf.fprintf fh ")";
+  | SpecialPattern sp -> ()
 
-and walk_action action =
+and walk_action action fh =
   match action with
-  | EmptyAction -> Printf.printf "Empty Action\n"
+  | EmptyAction -> ()
   | BlockAction stmt_list ->
-    Printf.printf "Block Action\n";
-    List.iter walk_statement stmt_list
-  (* Handle other cases similarly *)
+    List.iter (fun s -> walk_statement s and Printf.fprintf fh ";") stmt_list
 
-and walk_item item =
+and walk_item item fh =
   match item with
-  | SoloAction act -> walk_action act
+  | SoloAction act -> walk_action act fh
   | PatternAction (pat, act) ->
-    walk_pattern pat;
-    walk_action act
-  (* Handle other cases similarly *)
+    walk_pattern pat fh;
+    walk_action act fh
 
 and walk_program program =
   match program with
   | Program items ->
-    Printf.printf "AWK Program\n";
     List.iter walk_item items
-
-(* Example usage *)
-let example_ast =
-  Program [
-    SoloAction (BlockAction [
-      SimpleStatement (Assignment (SimpleName "x", Number 42));
-      IfStatement (BinaryOp (Variable "x", Eq, Number 42),
-                    SimpleStatement (PrintAssign (SimpleName "y", UnaryPrintExpr ("-", Number 42))),
-                    SimpleStatement (PrintStatement ([NonUnaryPrintExpr (ParenthesizedPrintExpr [Variable "x"])], None)));
-    ]);
-    (* ... add ore items as needed *)
-  ]m
